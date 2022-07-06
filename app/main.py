@@ -1,16 +1,21 @@
+from datetime import datetime
+import dotenv
+dotenv.load_dotenv()
+
 import uvicorn
 from fastapi import FastAPI
 
 from app.core import di
 from app.core.logging import logger, setup_logging
-from app.routes import health, api
+from app.routes import api, user_handling, tweets
 
 
 def init() -> FastAPI:
     start = datetime.utcnow()
     app = FastAPI()
-    app.include_router(router=health.router, prefix="/health")
     app.include_router(router=api.router, prefix="/api/v1")
+    app.include_router(router=user_handling.router)
+    app.include_router(router=tweets.router)
     config = di.get_config()
     setup_logging(config)
     duration = (datetime.utcnow() - start).total_seconds()

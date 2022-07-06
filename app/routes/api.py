@@ -10,3 +10,4 @@ router = APIRouter()
 @router.get("/", tags=["api"])
 async def service(service: Service = Depends(get_service)) -> ApiResponse:
     return ApiResponse()
+
