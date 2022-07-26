@@ -40,11 +40,18 @@ def load_tweet_draft(tweet_id: str) -> Optional[Tweet]:
         return tweet
 
 
-def load_tweet_drafts_for_user(user_id: str) -> Optional[list]:
+def load_tweet_drafts_for_user(draft_ids: list[str], user_id: str) -> Optional[list]:
     db = get_database()
 
     try:
-        tweet_drafts = db.tweetDrafts.find({"user_id" : user_id})
+        mongo_draft_ids = [ObjectId(draft_id) for draft_id in draft_ids]
+    except InvalidId:
+        return False
+
+    query = {"_id": {"$in": mongo_draft_ids}, "user_id" : user_id} if mongo_draft_ids else \
+            {"user_id" : user_id} 
+    try:
+        tweet_drafts = db.tweetDrafts.find(query)
         tweet_drafts = [TweetDraft.from_mongo(tweet) for tweet in list(tweet_drafts)]
     except:
         tweet_drafts = None

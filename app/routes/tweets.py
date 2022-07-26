@@ -1,8 +1,9 @@
 import json
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Response, Query
+from typing import Optional
 
 from app.routes.models import Tweet, TweetID
-from app.source.tweets.post_tweet import post_tweet_to_api
+from app.source.tweets.post_tweet import post_tweet_to_api, post_tweet_to_schedule_queue
 from app.source.tweets.draft_handling import store_tweet_draft, load_tweet_draft, load_tweet_drafts_for_user, delete_tweet_draft
 
 from app.core.logging import logger
@@ -36,13 +37,27 @@ async def post_tweet(tweet_id: TweetID):
     return api_response
 
 
+@router.post("/schedule-tweet", tags=["tweet_handling"])
+async def schedule_tweet(tweet_id: TweetID):
+    with open("token.json", "r") as token_file:
+        token = json.load(token_file)
+
+    tweet_id = tweet_id.tweet_id
+    tweet = load_tweet_draft(tweet_id)
+
+    tweet_text = tweet.tweet_text
+    api_response = post_tweet_to_schedule_queue(tweet_text, token)
+    
+    return api_response
+
+
 @router.get("/get-drafts", tags=["tweet_handling"])
-async def load_drafts():
+async def load_drafts(draft_ids: list | None = Query(default=[])):
     with open("token.json", "r") as token_file:
         token = json.load(token_file)
     user_id = token["user_id"]
 
-    tweet_drafts = load_tweet_drafts_for_user(user_id)
+    tweet_drafts = load_tweet_drafts_for_user(draft_ids, user_id)
 
     return {"drafts": tweet_drafts}
 

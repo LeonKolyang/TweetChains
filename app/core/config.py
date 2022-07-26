@@ -21,3 +21,11 @@ class DBConfig(BaseSettings):
     def ab(cls, v, values) -> str:
         return f"""mongodb+srv://{values["db_username"]}:{values["db_password"]}@cluster0.s4qfu.mongodb.net/"""\
             f"""{values["db_database"]}?retryWrites=true&w=majority"""
+
+
+class TwitterAuthConfig(BaseSettings):
+    consumer_key: str = Field("CONSUMER_KEY")
+    consumer_secret: str = Field("CONSUMER_SECRET")
+
+    class Config:
+        env_file = ".env"

@@ -9,6 +9,9 @@ class ApiResponse(BaseModel):
     pass
 
 
+class AppUser(BaseModel):
+    user_id: str
+
 class Tweet(BaseModel):
     tweet_text: str
     tweet_id: Optional[str]
@@ -21,3 +24,9 @@ class TweetDraft(MongoModel):
     user_id: str = Field()
     tweet_text: str = Field()
     creation_timestamp: datetime = Field()
+
+class TimeSlot(MongoModel):
+    id: OID = Field()
+    user_id: str = Field()
+    timestamp: datetime = Field()
+    assigned_draft: str | None = Field()

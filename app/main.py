@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 
 from app.core import di
 from app.core.logging import logger, setup_logging
-from app.routes import api, user_handling, tweets
+from app.routes import api, tweets, timeslots, users
 
 
 def init() -> FastAPI:
@@ -21,8 +21,9 @@ def init() -> FastAPI:
 
     # bind api routes 
     app.include_router(router=api.router, prefix="/api/v1")
-    app.include_router(router=user_handling.router)
+    app.include_router(router=users.router)
     app.include_router(router=tweets.router)
+    app.include_router(router=timeslots.router)
 
     # get config from dependency injection handler
     config = di.get_config()
