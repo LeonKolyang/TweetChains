@@ -26,7 +26,17 @@ class TweetDraft(MongoModel):
     creation_timestamp: datetime = Field()
 
 class TimeSlot(MongoModel):
-    id: OID = Field()
+    id: OID | None = Field()
     user_id: str = Field()
     timestamp: datetime = Field()
     assigned_draft: str | None = Field()
+    hidden: bool = Field(default=False)
+
+class RecurringTimeSlot(BaseModel):
+    user_id: str
+    hour_of_day: str 
+
+class DailySlotConfiguration(MongoModel):
+    id: OID = Field()
+    user_id: str = Field()
+    daily_timestamps: list[str] = Field()

@@ -12,6 +12,7 @@ class DBConfig(BaseSettings):
     db_username: str = Field(env="MONGO_DB_USER")
     db_password: str = Field(env="MONGO_DB_PASSWORD")
     db_database: str = Field(env="MONGO_DB_DATABASE")
+    db_test_database: str = Field(env="MONGO_DB_TEST_DATABASE")
     db_uri: str = Field(None)
 
     class Config:
