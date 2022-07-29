@@ -69,6 +69,7 @@ def delete_tweet_draft(tweet_id: str) -> bool:
         return False
 
     try:
+        remove_draft_assignment = db.timeslots.update_one({"assigned_draft": tweet_id}, {"$set": {"assigned_draft": None}})
         delete_status = db.tweetDrafts.delete_one({"_id": mongo_tweet_id})
     except:
         delete_status = False

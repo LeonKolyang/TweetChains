@@ -34,9 +34,9 @@ class TimeSlot(MongoModel):
 
 class RecurringTimeSlot(BaseModel):
     user_id: str
-    hour_of_day: str 
+    hour_of_day: datetime 
 
 class DailySlotConfiguration(MongoModel):
     id: OID = Field()
     user_id: str = Field()
-    daily_timestamps: list[str] = Field()
+    daily_timestamps: list[datetime] = Field()

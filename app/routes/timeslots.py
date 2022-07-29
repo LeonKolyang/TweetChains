@@ -28,6 +28,13 @@ async def assign_draft_to_timeslot(timeslot: TimeSlot):
     return str(update_status)
 
 
+@router.post("/remove-draft-from-timeslot", tags=["timeslot_handling"])
+async def assign_draft_to_timeslot(timeslot: TimeSlot):
+    update_status = update_timeslot_draft(timeslot)
+
+    return str(update_status)
+
+
 @router.post("/create-daily-timeslot", tags=["timeslot_handling"])
 async def create_daily_timeslot(recurring_timeslot: RecurringTimeSlot):
     """Write timestamp in the users configuration file.

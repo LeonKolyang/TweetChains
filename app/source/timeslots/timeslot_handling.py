@@ -75,7 +75,7 @@ def load_timeslots_by_days(dates: list, date_format: str, user_id: str):
         try:
             recurring_timeslots = db.dailySlotConfigurations.find_one({"user_id": user_id})
             recurring_timeslots = [
-                TimeSlot(id=ObjectId(), user_id=user_id, timestamp=datetime.strptime(date + " " + hour_of_day, date_format + " %H:%M:%S")) 
+                TimeSlot(id=ObjectId(), user_id=user_id, timestamp=datetime.strptime(date + hour_of_day.strftime("%H:%M"), date_format+"%H:%M")) 
                 for hour_of_day in recurring_timeslots["daily_timestamps"]]
         except:
             recurring_timeslots = []
@@ -149,6 +149,7 @@ def get_timeslot_configuration(user_id, db):
     try:
         timeslot_configuration = db.dailySlotConfigurations.find_one({"user_id": user_id})
         timeslot_configuration = DailySlotConfiguration.from_mongo(timeslot_configuration)
+        timeslot_configuration.daily_timestamps = sorted(timeslot_configuration.daily_timestamps)
     except:
         timeslot_configuration = None
     finally:
