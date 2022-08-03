@@ -1,8 +1,10 @@
+from dataclasses import dataclass
+from time import time
 from urllib.parse import urlparse
 from requests_oauthlib import OAuth1Session
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from rq import Queue
 from redis import Redis
 
@@ -39,16 +41,17 @@ def post_tweet_to_schedule_queue(tweet_text, token):
 
     #user_id = str(token["user_id"])
     redis_url = os.getenv('REDIS_URL', "redis://localhost:6379")
-
+    
     url = urlparse(redis_url)
-    #url = urlparse("redis://localhost:6379")
     r = Redis(host=url.hostname, port=url.port, password=url.password)
     queue = Queue(name="default", connection=r)
 
+    timestamp = datetime.now() + timedelta(minutes=1)
+    print(timestamp)
     # Schedules job to be run at 9:15, October 10th in the local timezone
-    #job = queue.enqueue_at(
-    #    datetime(2022, 8, 1, 22, 51), 
-    job = queue.enqueue(
+    job = queue.enqueue_at(
+        timestamp, 
+    #job = queue.enqueue(
         post_tweet_to_api, 
         kwargs={ 
             "tweet_text": tweet_text, 
