@@ -38,8 +38,10 @@ def post_tweet_to_schedule_queue(tweet_text, token):
     twitter_auth_config = get_twitter_auth_config()
 
     #user_id = str(token["user_id"])
-    #url = urlparse("redis://default:BUX6whhvsjm0vri2nWxuqTQzSrtdRiYh@redis-11576.c3.eu-west-1-1.ec2.cloud.redislabs.com:11576")
-    url = urlparse("redis://localhost:6379")
+    redis_url = os.getenv('REDIS_URL', "redis://localhost:6379")
+
+    url = urlparse(redis_url)
+    #url = urlparse("redis://localhost:6379")
     r = Redis(host=url.hostname, port=url.port, password=url.password)
     queue = Queue(name="default", connection=r)
 
