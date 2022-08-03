@@ -1,3 +1,4 @@
+from urllib.parse import urlparse
 from requests_oauthlib import OAuth1Session
 import os
 import json
@@ -7,11 +8,12 @@ from redis import Redis
 
 from app.core.di import get_twitter_auth_config
 from app.source.users.authentication import load_oauth_session
+from app.core.logging import logger
 
 
 def post_tweet_to_api(tweet_text, token, consumer_key=None, consumer_secret=None):
     oauth = load_oauth_session(token["oauth_token"], token["oauth_token_secret"], consumer_key, consumer_secret)
-
+    logger.info("Tweet scheduled")
     payload = {"text": tweet_text}
 
     # Making the request
@@ -36,12 +38,15 @@ def post_tweet_to_schedule_queue(tweet_text, token):
     twitter_auth_config = get_twitter_auth_config()
 
     #user_id = str(token["user_id"])
-
-    queue = Queue(name="default", connection=Redis())
+    #url = urlparse("redis://default:BUX6whhvsjm0vri2nWxuqTQzSrtdRiYh@redis-11576.c3.eu-west-1-1.ec2.cloud.redislabs.com:11576")
+    url = urlparse("redis://localhost:6379")
+    r = Redis(host=url.hostname, port=url.port, password=url.password)
+    queue = Queue(name="default", connection=r)
 
     # Schedules job to be run at 9:15, October 10th in the local timezone
-    job = queue.enqueue_at(
-        datetime(2022, 7, 21, 13, 51), 
+    #job = queue.enqueue_at(
+    #    datetime(2022, 8, 1, 22, 51), 
+    job = queue.enqueue(
         post_tweet_to_api, 
         kwargs={ 
             "tweet_text": tweet_text, 
