@@ -46,12 +46,11 @@ def post_tweet_to_schedule_queue(tweet_text, token):
     r = Redis(host=url.hostname, port=url.port, password=url.password)
     queue = Queue(name="default", connection=r)
 
-    timestamp = datetime.now() + timedelta(minutes=1)
+    timestamp = datetime.utcnow() + timedelta(minutes=3)
     print(timestamp)
     # Schedules job to be run at 9:15, October 10th in the local timezone
     job = queue.enqueue_at(
         timestamp, 
-    #job = queue.enqueue(
         post_tweet_to_api, 
         kwargs={ 
             "tweet_text": tweet_text, 

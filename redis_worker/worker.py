@@ -12,7 +12,7 @@ if not redis_url:
 elif "localhost" in redis_url:
     from rq.worker import Worker 
 else:
-    from rq.worker import HerokuWorker as Worker
+    from rq.worker import Worker
 
 uses_netloc.append('redis')
 url = urlparse(redis_url)
