@@ -19,6 +19,10 @@ class Tweet(BaseModel):
 class TweetID(BaseModel):
     tweet_id: str
 
+class ScheduledTweet(BaseModel):
+    tweet_id: str
+    timeslot_id: str
+
 class TweetDraft(MongoModel):
     id: OID = Field()
     user_id: str = Field()

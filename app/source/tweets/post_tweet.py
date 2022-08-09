@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 from requests_oauthlib import OAuth1Session
 import os
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from rq import Queue
 from redis import Redis
 
@@ -36,7 +36,7 @@ def post_tweet_to_api(tweet_text, token, consumer_key=None, consumer_secret=None
     return json_response
 
 
-def post_tweet_to_schedule_queue(tweet_text, token):
+def post_tweet_to_schedule_queue(tweet_text, timestamp, token):
     twitter_auth_config = get_twitter_auth_config()
 
     #user_id = str(token["user_id"])
@@ -46,12 +46,14 @@ def post_tweet_to_schedule_queue(tweet_text, token):
     r = Redis(host=url.hostname, port=url.port, password=url.password)
     queue = Queue(name="default", connection=r)
 
-    timestamp = datetime.utcnow() + timedelta(minutes=3)
+    timestamp = datetime.now() + timedelta(minutes=3)
+    #timestamp.replace(tzinfo=timezone.utc)
+
     print(timestamp)
     # Schedules job to be run at 9:15, October 10th in the local timezone
     job = queue.enqueue_at(
-        timestamp, 
-        post_tweet_to_api, 
+        datetime=timestamp, 
+        f=post_tweet_to_api, 
         kwargs={ 
             "tweet_text": tweet_text, 
             "token": token,
@@ -59,11 +61,7 @@ def post_tweet_to_schedule_queue(tweet_text, token):
             "consumer_secret": twitter_auth_config.consumer_secret 
             }
         )
-
-
-
-
-
+    return True
 
 
 def post_tweet_standalone(tweet_text):

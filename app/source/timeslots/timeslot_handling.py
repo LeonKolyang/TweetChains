@@ -30,6 +30,17 @@ def add_timeslot(timestamp, user_id, db):
         return timeslot_id
 
 
+def load_timeslot_by_id(timeslot_id, db):
+
+    try:
+        timeslot = db.timeslots.find_one(ObjectId(timeslot_id))
+        timeslot = TimeSlot.from_mongo(timeslot) 
+    except:
+        timeslot = {}
+    finally:
+        return timeslot
+
+
 def hide_timeslot(timeslot, db):
 
     try:
@@ -38,7 +49,15 @@ def hide_timeslot(timeslot, db):
         return False
 
     try:
-        update_status = db.timeslots.replace_one({"_id": mongo_timeslot_id}, timeslot.mongo(), upsert=True)
+        custom_timeslot = db.timeslots.count_documents({"_id": mongo_timeslot_id})
+    except:
+        custom_timeslot = False
+
+    try:
+        if custom_timeslot:
+            update_status = db.timeslots.replace_one({"_id": mongo_timeslot_id}, {"$set": {"hidden": True}})
+        else:
+            update_status = db.timeslots.insert_one(timeslot.mongo())
         update_status = update_status.acknowledged
     except:
         mongo_timeslot_id = None
@@ -58,41 +77,43 @@ def load_timeslots(user_id):
         return timeslots
 
 
-def load_timeslots_by_days(dates: list, date_format: str, user_id: str):
+def load_timeslots_by_days(dates: list, date_format: str, base_date: datetime, user_id: str):
     db = get_database()
-    daily_timeslots = []
 
+    try:
+        #iso_date = datetime.strptime(date, date_format)
+        custom_timeslots = db.timeslots.find({"user_id": user_id, "timestamp": {"$gte": base_date }})#, "$lt": iso_date+timedelta(days=1)}})
+        custom_timeslots = [TimeSlot.from_mongo(timeslot) for timeslot in custom_timeslots]
+    except:
+        custom_timeslots = []
+
+    try:
+        timeslot_configuration = db.dailySlotConfigurations.find_one({"user_id": user_id})
+    except:
+        timeslot_configuration = {"daily_timestamps": []}
+
+    recurring_timeslots = []
     for date in dates:
-        
-        try:
-            iso_date = datetime.strptime(date, date_format)
-            custom_timeslots = db.timeslots.find({"user_id": user_id, "timestamp": {"$gte": iso_date, "$lt": iso_date+timedelta(days=1)}})
-            custom_timeslots = [TimeSlot.from_mongo(timeslot) for timeslot in custom_timeslots]
-        
-        except:
-            custom_timeslots = []
-        
-        try:
-            recurring_timeslots = db.dailySlotConfigurations.find_one({"user_id": user_id})
-            recurring_timeslots = [
-                TimeSlot(id=ObjectId(), user_id=user_id, timestamp=datetime.strptime(date + hour_of_day.strftime("%H:%M"), date_format+"%H:%M")) 
-                for hour_of_day in recurring_timeslots["daily_timestamps"]]
-        except:
-            recurring_timeslots = []
+        recurring_timeslots += [
+            TimeSlot(
+                id=ObjectId(), 
+                user_id=user_id, 
+                timestamp=datetime.strptime(date + hour_of_day.strftime("%H:%M"), date_format+"%H:%M")
+                ) 
+            for hour_of_day in timeslot_configuration["daily_timestamps"]]
+    recurring_timeslots = [slot for slot in recurring_timeslots if slot.timestamp > base_date]
 
-        custom_timeslots_timestamps = [timeslot.timestamp for timeslot in custom_timeslots]
+    custom_timeslots_timestamps = [timeslot.timestamp for timeslot in custom_timeslots]
+    recurring_timeslots = [timeslot for timeslot in recurring_timeslots if timeslot.timestamp not in custom_timeslots_timestamps]
 
-        recurring_timeslots = [timeslot for timeslot in recurring_timeslots if timeslot.timestamp not in custom_timeslots_timestamps]
+    timeslots = custom_timeslots + recurring_timeslots
+    timeslots = [timeslot for timeslot in timeslots if not timeslot.hidden]
+    timeslots = sorted(timeslots, key=lambda slot: slot.timestamp)
 
-        timeslots = custom_timeslots + recurring_timeslots
-        timeslots = [timeslot for timeslot in timeslots if not timeslot.hidden]
-        timeslots = sorted(timeslots, key=lambda slot: slot.timestamp)
-
-        date_timeslots = {
-            "weekday": date,
-            "timeslots": timeslots}
-        daily_timeslots.append(date_timeslots)
-
+    daily_timeslots = {
+        "weekdays": dates,
+        "timeslots": timeslots
+    }
     return daily_timeslots
 
 
@@ -118,14 +139,14 @@ def update_timeslot_draft(timeslot):
 
 
 def get_weekly_timeslots(user_id):
-    base_date = datetime.today()
+    base_date = datetime.utcnow()
     numdays = 7
 
     date_format = "%Y-%m-%d"
     date_list = [base_date + timedelta(days=x) for x in range(numdays)]
     date_list = [date.strftime(date_format) for date in date_list]
 
-    weekly_timeslots = load_timeslots_by_days(date_list, date_format, user_id)
+    weekly_timeslots = load_timeslots_by_days(date_list, date_format, base_date, user_id)
 
     return weekly_timeslots
 
@@ -149,7 +170,7 @@ def get_timeslot_configuration(user_id, db):
     try:
         timeslot_configuration = db.dailySlotConfigurations.find_one({"user_id": user_id})
         timeslot_configuration = DailySlotConfiguration.from_mongo(timeslot_configuration)
-        timeslot_configuration.daily_timestamps = sorted(timeslot_configuration.daily_timestamps)
+        timeslot_configuration.daily_timestamps = sorted(timeslot_configuration.daily_timestamps, key=lambda slot: slot.strftime("%H:%M"))
     except:
         timeslot_configuration = None
     finally:
